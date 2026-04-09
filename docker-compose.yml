@@ -23,6 +23,8 @@ services:
       - ./data:/app/data
       - /dev/shm:/dev/shm
     shm_size: "2gb"
+    ports:
+      - "8080:8080"   # 웹 대시보드 (http://localhost:8080)
     restart: unless-stopped
     # Chromium이 display 없이 실행될 경우 가상 디스플레이 사용
     environment:

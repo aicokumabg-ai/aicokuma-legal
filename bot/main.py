@@ -5,14 +5,17 @@ aicokuma TikTok 자동화 봇 진입점.
   - Telegram polling (봇 명령 수신)
   - monitor_loop (TikTok 게시글 댓글 폴링)
   - executor_loop (action_queue 처리)
+  - Web dashboard (FastAPI, 기본 포트 8080)
 """
 import asyncio
 import sys
+import uvicorn
 from bot.config import config
 from bot.database.db import init_db
 from bot.telegram.handler import build_application
 from bot.queue.worker import monitor_loop, executor_loop
 from bot.tiktok.browser import close_browser
+from bot.web.app import app as web_app
 from bot.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -42,10 +45,16 @@ async def main() -> None:
         await tg_app.updater.start_polling(drop_pending_updates=True)
         logger.info("Telegram bot polling started")
 
+        # 웹 대시보드 서버
+        web_server = uvicorn.Server(
+            uvicorn.Config(web_app, host="0.0.0.0", port=8080, log_level="warning")
+        )
+
         try:
             await asyncio.gather(
                 monitor_loop(),
                 executor_loop(),
+                web_server.serve(),
             )
         except asyncio.CancelledError:
             logger.info("Shutdown signal received")

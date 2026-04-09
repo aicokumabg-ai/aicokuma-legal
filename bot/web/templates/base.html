@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}aicokuma{% endblock %} — TikTok 자동화 봇</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .sidebar-item { @apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-150; }
+    .sidebar-item:hover { @apply bg-white/10; }
+    .sidebar-item.active { @apply bg-white text-purple-700; }
+    .sidebar-item:not(.active) { @apply text-white/80; }
+    .toggle-checkbox:checked { right: 0; border-color: #7c3aed; }
+    .toggle-checkbox:checked + .toggle-label { background-color: #7c3aed; }
+    .toggle-label { transition: background-color 0.2s; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+<div class="flex h-screen overflow-hidden">
+
+  <!-- Sidebar -->
+  <aside class="w-60 flex-shrink-0 bg-gradient-to-b from-purple-700 to-purple-900 flex flex-col">
+    <!-- Logo -->
+    <div class="px-6 py-5 border-b border-white/10">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+          <svg class="w-5 h-5 text-purple-700" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z"/>
+          </svg>
+        </div>
+        <span class="text-white font-bold text-lg">aicokuma</span>
+      </div>
+      <p class="text-white/50 text-xs mt-1">TikTok 자동화 대시보드</p>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 px-3 py-4 space-y-1">
+      <a href="/" class="sidebar-item {% if active_page == 'dashboard' %}active{% endif %}">
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+        </svg>
+        대시보드
+      </a>
+      <a href="/posts" class="sidebar-item {% if active_page == 'posts' %}active{% endif %}">
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/>
+        </svg>
+        게시글 & 규칙
+      </a>
+      <a href="/logs" class="sidebar-item {% if active_page == 'logs' %}active{% endif %}">
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+        </svg>
+        실행 로그
+      </a>
+      <a href="/settings" class="sidebar-item {% if active_page == 'settings' %}active{% endif %}">
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        설정
+      </a>
+    </nav>
+
+    <!-- Bot status badge -->
+    <div class="px-4 pb-5" x-data="statusPoller()">
+      <div class="bg-white/10 rounded-xl p-3">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+          <span class="text-white text-xs font-medium">봇 실행 중</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-center">
+          <div class="bg-white/10 rounded-lg py-1.5">
+            <div class="text-white font-bold text-lg" x-text="stats.pending_actions ?? '…'"></div>
+            <div class="text-white/60 text-xs">대기 중</div>
+          </div>
+          <div class="bg-white/10 rounded-lg py-1.5">
+            <div class="text-white font-bold text-lg" x-text="stats.done_today ?? '…'"></div>
+            <div class="text-white/60 text-xs">오늘 완료</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="flex-1 flex flex-col overflow-hidden">
+    <!-- Top bar -->
+    <header class="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between flex-shrink-0">
+      <div>
+        <h1 class="text-xl font-bold text-gray-900">{% block heading %}대시보드{% endblock %}</h1>
+        <p class="text-sm text-gray-500">{% block subheading %}{% endblock %}</p>
+      </div>
+      <div class="flex items-center gap-3">
+        {% block header_actions %}{% endblock %}
+      </div>
+    </header>
+
+    <!-- Page content -->
+    <div class="flex-1 overflow-y-auto p-8">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</div>
+
+<!-- Toast notification -->
+<div id="toast" class="fixed bottom-6 right-6 z-50 hidden">
+  <div class="bg-gray-900 text-white text-sm px-4 py-3 rounded-xl shadow-lg flex items-center gap-2">
+    <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+    </svg>
+    <span id="toast-msg"></span>
+  </div>
+</div>
+
+<script>
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.remove('hidden');
+  setTimeout(() => t.classList.add('hidden'), 2800);
+}
+
+function statusPoller() {
+  return {
+    stats: {},
+    init() {
+      this.poll();
+      setInterval(() => this.poll(), 10000);
+    },
+    async poll() {
+      try {
+        const r = await fetch('/api/stats');
+        this.stats = await r.json();
+      } catch(e) {}
+    }
+  }
+}
+
+async function apiCall(method, url, body) {
+  const opts = { method, headers: {} };
+  if (body) {
+    if (body instanceof FormData) {
+      opts.body = body;
+    } else {
+      opts.headers['Content-Type'] = 'application/json';
+      opts.body = JSON.stringify(body);
+    }
+  }
+  const r = await fetch(url, opts);
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({}));
+    throw new Error(err.detail || '오류가 발생했습니다');
+  }
+  return r.json().catch(() => ({}));
+}
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

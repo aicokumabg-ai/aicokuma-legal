@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}실행 로그{% endblock %}
+{% block heading %}실행 로그{% endblock %}
+{% block subheading %}대댓글 · DM 실행 이력을 확인합니다{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+  <!-- Filter bar -->
+  <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-3">
+    <div class="flex gap-2" id="filter-btns">
+      <button onclick="filterLogs('all', this)" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-600 text-white">전체</button>
+      <button onclick="filterLogs('reply', this)" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200">대댓글</button>
+      <button onclick="filterLogs('dm', this)" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200">DM</button>
+      <button onclick="filterLogs('done', this)" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200">완료</button>
+      <button onclick="filterLogs('pending', this)" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200">대기</button>
+      <button onclick="filterLogs('failed', this)" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200">실패</button>
+    </div>
+    <div class="ml-auto text-xs text-gray-400">총 {{ total }}개</div>
+  </div>
+
+  <table class="w-full text-sm" id="log-table">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">유형</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">대상</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">키워드</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">상태</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">예약 시각</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">생성 시각</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-50" id="log-tbody">
+      {% if rows %}
+        {% for row in rows %}
+        <tr class="hover:bg-gray-50 log-row" data-type="{{ row.type }}" data-status="{{ row.status }}">
+          <td class="px-6 py-3.5">
+            {% if row.type == 'reply' %}
+              <span class="px-2.5 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">💬 대댓글</span>
+            {% else %}
+              <span class="px-2.5 py-1 bg-purple-100 text-purple-700 text-xs rounded-full font-medium">📩 DM</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3.5 text-gray-700">
+            {% if row.payload is mapping %}
+              @{{ row.payload.get('username', '—') }}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+          <td class="px-4 py-3.5 text-gray-500 text-xs">
+            {% if row.payload is mapping %}
+              {{ row.payload.get('matched_keyword', '—') }}
+            {% endif %}
+          </td>
+          <td class="px-4 py-3.5">
+            {% if row.status == 'done' %}
+              <span class="flex items-center gap-1 text-green-600 text-xs font-medium">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                </svg> 완료
+              </span>
+            {% elif row.status == 'pending' %}
+              <span class="flex items-center gap-1 text-amber-500 text-xs font-medium">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg> 대기
+              </span>
+            {% elif row.status == 'running' %}
+              <span class="flex items-center gap-1 text-blue-500 text-xs font-medium">
+                <svg class="w-3.5 h-3.5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg> 실행 중
+              </span>
+            {% else %}
+              <span class="flex items-center gap-1 text-red-500 text-xs font-medium">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg> 실패
+              </span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3.5 text-xs text-gray-400">{{ row.scheduled_at[:16] if row.scheduled_at else '—' }}</td>
+          <td class="px-4 py-3.5 text-xs text-gray-400">{{ row.created_at[:16] if row.created_at else '—' }}</td>
+        </tr>
+        {% endfor %}
+      {% else %}
+        <tr>
+          <td colspan="6" class="px-6 py-16 text-center text-gray-400 text-sm">실행된 액션이 없습니다</td>
+        </tr>
+      {% endif %}
+    </tbody>
+  </table>
+
+  <!-- Pagination -->
+  {% if total > per_page %}
+  <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
+    <p class="text-xs text-gray-400">{{ (page-1)*per_page + 1 }}–{{ [page*per_page, total] | min }}개 / 전체 {{ total }}개</p>
+    <div class="flex gap-2">
+      {% if page > 1 %}
+        <a href="/logs?page={{ page - 1 }}" class="px-3 py-1.5 text-xs font-medium border border-gray-200 rounded-lg hover:bg-gray-50">← 이전</a>
+      {% endif %}
+      {% if page * per_page < total %}
+        <a href="/logs?page={{ page + 1 }}" class="px-3 py-1.5 text-xs font-medium border border-gray-200 rounded-lg hover:bg-gray-50">다음 →</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterLogs(filter, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.classList.remove('bg-purple-600', 'text-white');
+    b.classList.add('bg-gray-100', 'text-gray-600');
+  });
+  btn.classList.add('bg-purple-600', 'text-white');
+  btn.classList.remove('bg-gray-100', 'text-gray-600');
+
+  document.querySelectorAll('.log-row').forEach(row => {
+    const show = filter === 'all'
+      || row.dataset.type === filter
+      || row.dataset.status === filter;
+    row.style.display = show ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

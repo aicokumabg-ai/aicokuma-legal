@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% block title %}게시글 & 규칙{% endblock %}
+{% block heading %}게시글 & 규칙{% endblock %}
+{% block subheading %}모니터링할 TikTok 게시글과 키워드 규칙을 관리합니다{% endblock %}
+
+{% block header_actions %}
+<button onclick="document.getElementById('modal-add-post').classList.remove('hidden')"
+  class="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors">
+  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+  </svg>
+  게시글 추가
+</button>
+{% endblock %}
+
+{% block content %}
+
+{% if not posts_with_rules %}
+<!-- Empty state -->
+<div class="flex flex-col items-center justify-center py-24 text-center">
+  <div class="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center mb-4">
+    <svg class="w-8 h-8 text-purple-400" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z"/>
+    </svg>
+  </div>
+  <h3 class="text-lg font-semibold text-gray-800 mb-1">게시글을 추가해보세요</h3>
+  <p class="text-gray-400 text-sm mb-5">모니터링할 TikTok 영상 URL을 등록하면<br>댓글을 자동으로 감지합니다</p>
+  <button onclick="document.getElementById('modal-add-post').classList.remove('hidden')"
+    class="bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-colors">
+    + 첫 게시글 추가
+  </button>
+</div>
+{% endif %}
+
+<div class="space-y-5">
+{% for item in posts_with_rules %}
+{% set post = item.post %}
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden" id="post-{{ post.id }}">
+  <!-- Post header -->
+  <div class="px-6 py-4 flex items-center gap-4 border-b border-gray-50">
+    <div class="w-10 h-10 bg-purple-50 rounded-xl flex-shrink-0 flex items-center justify-center">
+      <svg class="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z"/>
+      </svg>
+    </div>
+    <div class="flex-1 min-w-0">
+      <a href="{{ post.url }}" target="_blank" class="text-sm font-semibold text-gray-800 hover:text-purple-600 truncate block">
+        {{ post.url }}
+      </a>
+      <p class="text-xs text-gray-400">video_id: {{ post.video_id }} · 처리된 댓글: {{ item.processed_count }}개</p>
+    </div>
+
+    <!-- Toggle active -->
+    <div class="flex items-center gap-3">
+      <label class="relative inline-flex items-center cursor-pointer"
+             x-data="{ active: {{ 'true' if post.active else 'false' }} }"
+             @click.prevent="active = !active; apiCall('PUT', '/api/posts/{{ post.id }}/active?active=' + active).then(() => showToast(active ? '모니터링 활성화' : '모니터링 중지'))">
+        <div :class="active ? 'bg-purple-600' : 'bg-gray-200'"
+             class="w-11 h-6 rounded-full transition-colors duration-200"></div>
+        <div :class="active ? 'translate-x-6' : 'translate-x-1'"
+             class="absolute w-4 h-4 bg-white rounded-full shadow transition-transform duration-200"></div>
+      </label>
+      <span class="text-sm text-gray-500">{{ '활성' if post.active else '중지' }}</span>
+
+      <button onclick="if(confirm('이 게시글을 삭제하시겠습니까?')) { apiCall('DELETE', '/api/posts/{{ post.id }}').then(() => { document.getElementById('post-{{ post.id }}').remove(); showToast('삭제되었습니다'); }); }"
+        class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Rules -->
+  <div class="px-6 py-4">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="text-sm font-semibold text-gray-700">키워드 규칙 ({{ item.rules | length }}개)</h3>
+      <button onclick="openRuleModal({{ post.id }})"
+        class="flex items-center gap-1.5 text-xs text-purple-600 hover:text-purple-800 font-medium">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        규칙 추가
+      </button>
+    </div>
+
+    {% if item.rules %}
+    <div class="space-y-2">
+      {% for rule in item.rules %}
+      <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-xl hover:bg-purple-50 transition-colors group" id="rule-{{ rule.id }}">
+        <!-- Keyword badge -->
+        <span class="px-3 py-1.5 bg-white border border-purple-200 text-purple-700 text-xs font-semibold rounded-lg flex-shrink-0 shadow-sm">
+          {{ rule.keyword }}
+        </span>
+
+        <!-- Reply / DM -->
+        <div class="flex-1 min-w-0 space-y-1">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-medium text-blue-600 flex-shrink-0">💬 대댓글</span>
+            <span class="text-xs text-gray-600 truncate">{{ rule.reply_text }}</span>
+          </div>
+          {% if rule.dm_text %}
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-medium text-purple-600 flex-shrink-0">📩 DM</span>
+            <span class="text-xs text-gray-600 truncate">{{ rule.dm_text }}</span>
+          </div>
+          {% else %}
+          <span class="text-xs text-gray-400">DM 없음</span>
+          {% endif %}
+        </div>
+
+        <!-- Toggle + delete -->
+        <div class="flex items-center gap-2 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+          <label class="relative inline-flex items-center cursor-pointer"
+                 x-data="{ active: {{ 'true' if rule.active else 'false' }} }"
+                 @click.prevent="active = !active; apiCall('PUT', '/api/rules/{{ rule.id }}/active?active=' + active)">
+            <div :class="active ? 'bg-purple-600' : 'bg-gray-300'"
+                 class="w-8 h-4 rounded-full transition-colors duration-200"></div>
+            <div :class="active ? 'translate-x-4' : 'translate-x-0.5'"
+                 class="absolute w-3 h-3 bg-white rounded-full shadow transition-transform duration-200"></div>
+          </label>
+          <button onclick="apiCall('DELETE', '/api/rules/{{ rule.id }}').then(() => { document.getElementById('rule-{{ rule.id }}').remove(); showToast('규칙 삭제됨'); })"
+            class="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-red-500 rounded">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-6 text-gray-400 text-sm">
+      규칙이 없습니다.
+      <button onclick="openRuleModal({{ post.id }})" class="text-purple-600 font-medium ml-1">+ 추가</button>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+</div>
+
+<!-- Modal: Add Post -->
+<div id="modal-add-post" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
+     onclick="if(event.target===this) this.classList.add('hidden')">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="text-lg font-bold text-gray-900">게시글 추가</h3>
+      <button onclick="document.getElementById('modal-add-post').classList.add('hidden')"
+        class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">✕</button>
+    </div>
+    <form id="form-add-post" onsubmit="submitAddPost(event)">
+      <label class="block text-sm font-medium text-gray-700 mb-1.5">TikTok 영상 URL</label>
+      <input type="url" name="url" placeholder="https://www.tiktok.com/@user/video/123..."
+        class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 mb-4" required>
+      <button type="submit"
+        class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 rounded-xl transition-colors">
+        모니터링 시작
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Add Rule -->
+<div id="modal-add-rule" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
+     onclick="if(event.target===this) this.classList.add('hidden')">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="text-lg font-bold text-gray-900">규칙 추가</h3>
+      <button onclick="document.getElementById('modal-add-rule').classList.add('hidden')"
+        class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">✕</button>
+    </div>
+    <form id="form-add-rule" onsubmit="submitAddRule(event)">
+      <input type="hidden" id="rule-post-id" name="post_id">
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">감지 키워드</label>
+        <input type="text" name="keyword" placeholder="예: 가격, 구매, 어디서"
+          class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400" required>
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">대댓글 내용</label>
+        <textarea name="reply_text" rows="2" placeholder="예: 링크인바이오 확인해주세요 😊"
+          class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 resize-none" required></textarea>
+      </div>
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">DM 내용 <span class="text-gray-400 font-normal">(선택)</span></label>
+        <textarea name="dm_text" rows="2" placeholder="예: 안녕하세요! 문의해주셔서 감사합니다..."
+          class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 resize-none"></textarea>
+      </div>
+      <button type="submit"
+        class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 rounded-xl transition-colors">
+        규칙 저장
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openRuleModal(postId) {
+  document.getElementById('rule-post-id').value = postId;
+  document.getElementById('modal-add-rule').classList.remove('hidden');
+}
+
+async function submitAddPost(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  try {
+    const data = await apiCall('POST', '/api/posts', fd);
+    showToast('게시글이 등록되었습니다!');
+    document.getElementById('modal-add-post').classList.add('hidden');
+    setTimeout(() => location.reload(), 800);
+  } catch(err) {
+    alert(err.message);
+  }
+}
+
+async function submitAddRule(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const postId = fd.get('post_id');
+  try {
+    await apiCall('POST', `/api/posts/${postId}/rules`, fd);
+    showToast('규칙이 추가되었습니다!');
+    document.getElementById('modal-add-rule').classList.add('hidden');
+    setTimeout(() => location.reload(), 800);
+  } catch(err) {
+    alert(err.message);
+  }
+}
+</script>
+{% endblock %}

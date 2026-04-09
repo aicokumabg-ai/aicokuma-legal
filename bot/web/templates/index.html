@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}대시보드{% endblock %}
+{% block heading %}대시보드{% endblock %}
+{% block subheading %}TikTok 자동 대댓글 · DM 현황{% endblock %}
+
+{% block content %}
+<!-- 통계 카드 -->
+<div class="grid grid-cols-4 gap-5 mb-8">
+  <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+    <div class="flex items-center justify-between mb-3">
+      <p class="text-sm font-medium text-gray-500">활성 게시글</p>
+      <div class="w-9 h-9 bg-purple-50 rounded-xl flex items-center justify-center">
+        <svg class="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z"/>
+        </svg>
+      </div>
+    </div>
+    <p class="text-3xl font-bold text-gray-900">{{ posts | selectattr("active", "equalto", 1) | list | length }}</p>
+    <p class="text-xs text-gray-400 mt-1">전체 {{ posts | length }}개 등록</p>
+  </div>
+
+  <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+    <div class="flex items-center justify-between mb-3">
+      <p class="text-sm font-medium text-gray-500">활성 규칙</p>
+      <div class="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center">
+        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/>
+        </svg>
+      </div>
+    </div>
+    <p class="text-3xl font-bold text-gray-900">{{ total_rules }}</p>
+    <p class="text-xs text-gray-400 mt-1">키워드 감지 규칙</p>
+  </div>
+
+  <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+    <div class="flex items-center justify-between mb-3">
+      <p class="text-sm font-medium text-gray-500">대기 중 액션</p>
+      <div class="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center">
+        <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+    </div>
+    <p class="text-3xl font-bold text-gray-900">{{ pending_q }}</p>
+    <p class="text-xs text-gray-400 mt-1">스케줄된 대댓글/DM</p>
+  </div>
+
+  <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+    <div class="flex items-center justify-between mb-3">
+      <p class="text-sm font-medium text-gray-500">총 처리 댓글</p>
+      <div class="w-9 h-9 bg-green-50 rounded-xl flex items-center justify-center">
+        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+    </div>
+    <p class="text-3xl font-bold text-gray-900">{{ total_processed }}</p>
+    <p class="text-xs text-gray-400 mt-1">누적 매칭 처리</p>
+  </div>
+</div>
+
+<div class="grid grid-cols-3 gap-6">
+  <!-- 모니터링 게시글 목록 -->
+  <div class="col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+      <h2 class="font-semibold text-gray-800">모니터링 게시글</h2>
+      <a href="/posts" class="text-sm text-purple-600 font-medium hover:text-purple-800">전체 보기 →</a>
+    </div>
+    <div class="divide-y divide-gray-50">
+      {% if posts %}
+        {% for post in posts[:5] %}
+        <div class="px-6 py-4 flex items-center gap-4 hover:bg-gray-50 transition-colors">
+          <div class="w-10 h-10 bg-gray-100 rounded-xl flex-shrink-0 flex items-center justify-center text-gray-400">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z"/>
+            </svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-gray-800 truncate">{{ post.url }}</p>
+            <p class="text-xs text-gray-400">video_id: {{ post.video_id }}</p>
+          </div>
+          <span class="px-2.5 py-1 rounded-full text-xs font-medium {{ 'bg-green-100 text-green-700' if post.active else 'bg-gray-100 text-gray-500' }}">
+            {{ '활성' if post.active else '중지' }}
+          </span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="px-6 py-10 text-center text-gray-400">
+          <p class="text-sm">등록된 게시글이 없습니다.</p>
+          <a href="/posts" class="mt-2 inline-block text-sm text-purple-600 font-medium">+ 게시글 추가</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- 최근 액션 -->
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+      <h2 class="font-semibold text-gray-800">최근 액션</h2>
+      <a href="/logs" class="text-sm text-purple-600 font-medium hover:text-purple-800">로그 →</a>
+    </div>
+    <div class="divide-y divide-gray-50 overflow-y-auto max-h-80">
+      {% if recent %}
+        {% for action in recent %}
+        <div class="px-5 py-3">
+          <div class="flex items-center gap-2 mb-1">
+            {% if action.type == 'reply' %}
+              <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">대댓글</span>
+            {% else %}
+              <span class="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full font-medium">DM</span>
+            {% endif %}
+            {% if action.status == 'done' %}
+              <span class="text-green-500 text-xs">✓ 완료</span>
+            {% elif action.status == 'pending' %}
+              <span class="text-amber-500 text-xs">⏳ 대기</span>
+            {% elif action.status == 'running' %}
+              <span class="text-blue-500 text-xs">▶ 실행 중</span>
+            {% else %}
+              <span class="text-red-500 text-xs">✕ 실패</span>
+            {% endif %}
+          </div>
+          {% if action.payload is mapping %}
+            <p class="text-xs text-gray-600">@{{ action.payload.get('username', '?') }}</p>
+          {% endif %}
+          <p class="text-xs text-gray-400">{{ action.created_at[:16] if action.created_at else '' }}</p>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="px-6 py-10 text-center text-gray-400 text-sm">아직 실행된 액션이 없습니다</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
