@@ -1,11 +1,11 @@
 """
 aicokuma TikTok 자동화 봇 진입점.
 
-실행되는 루프:
-  - Telegram polling (봇 명령 수신)
-  - monitor_loop (TikTok 게시글 댓글 폴링)
-  - executor_loop (action_queue 처리)
-  - Web dashboard (FastAPI, 기본 포트 8080)
+실행 순서:
+  1. DB 초기화
+  2. 웹 대시보드 (FastAPI, :8080) — 즉시 시작
+  3. 텔레그램 봇 polling — 즉시 시작 (TikTok 불필요)
+  4. TikTok monitor/executor — 로그인 완료 후 시작
 """
 import asyncio
 import sys
@@ -21,8 +21,18 @@ from bot.utils.logger import get_logger
 logger = get_logger(__name__)
 
 
+async def run_tiktok_workers() -> None:
+    """TikTok 로그인 이후 모니터/실행 루프를 구동한다."""
+    try:
+        await asyncio.gather(
+            monitor_loop(),
+            executor_loop(),
+        )
+    except Exception as e:
+        logger.error("TikTok worker error: %s", e)
+
+
 async def main() -> None:
-    # 설정 유효성 검사
     if not config.telegram_bot_token:
         logger.error("TELEGRAM_BOT_TOKEN이 설정되지 않았습니다.")
         sys.exit(1)
@@ -30,31 +40,26 @@ async def main() -> None:
         logger.error("TELEGRAM_ALLOWED_USERS가 설정되지 않았습니다.")
         sys.exit(1)
 
-    # DB 초기화
     init_db()
 
-    # 텔레그램 앱 빌드
     tg_app = build_application()
+
+    web_server = uvicorn.Server(
+        uvicorn.Config(web_app, host="0.0.0.0", port=8080, log_level="warning")
+    )
 
     logger.info("aicokuma bot starting...")
 
-    # 텔레그램 polling, 모니터 루프, 실행 루프를 동시에 실행
     async with tg_app:
         await tg_app.initialize()
         await tg_app.start()
         await tg_app.updater.start_polling(drop_pending_updates=True)
-        logger.info("Telegram bot polling started")
-
-        # 웹 대시보드 서버
-        web_server = uvicorn.Server(
-            uvicorn.Config(web_app, host="0.0.0.0", port=8080, log_level="warning")
-        )
+        logger.info("✅ Telegram bot polling started")
 
         try:
             await asyncio.gather(
-                monitor_loop(),
-                executor_loop(),
-                web_server.serve(),
+                web_server.serve(),          # 웹 대시보드
+                run_tiktok_workers(),        # TikTok 자동화
             )
         except asyncio.CancelledError:
             logger.info("Shutdown signal received")
