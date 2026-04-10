@@ -1,6 +1,5 @@
 """
 Central configuration management.
-Loads all settings from environment variables with sensible defaults.
 """
 import os
 from dataclasses import dataclass, field
@@ -36,15 +35,32 @@ class Config:
 
     # --- Database ---
     db_path: str = field(
-        default_factory=lambda: os.getenv("DB_PATH", "/app/data/bot.db")
+        default_factory=lambda: os.getenv("DB_PATH", "./data/bot.db")
     )
 
-    # --- Browser ---
+    # ─── Chrome 연결 방식 ────────────────────────────────────────────────────
+    # 방법 1: 기존 Chrome에 CDP로 연결 (가장 권장)
+    #   Chrome을 --remote-debugging-port=9222 로 실행해야 함
+    chrome_debug_port: int = field(
+        default_factory=lambda: int(os.getenv("CHROME_DEBUG_PORT", "9222"))
+    )
+    # 방법 2: 기존 Chrome 프로필 경로 사용 (Chrome이 꺼져 있어야 함)
+    #   Windows: C:\Users\{사용자}\AppData\Local\Google\Chrome\User Data
+    #   Mac:     /Users/{사용자}/Library/Application Support/Google/Chrome
+    #   Linux:   /home/{사용자}/.config/google-chrome
+    chrome_user_data_dir: str = field(
+        default_factory=lambda: os.getenv("CHROME_USER_DATA_DIR", "")
+    )
+    # 사용할 Chrome 프로필 이름 (기본: Default)
+    chrome_profile: str = field(
+        default_factory=lambda: os.getenv("CHROME_PROFILE", "Default")
+    )
+    # 방법 3: 새 브라우저 (fallback — 세션 별도 관리)
     browser_headless: bool = field(
         default_factory=lambda: os.getenv("BROWSER_HEADLESS", "false").lower() == "true"
     )
     session_dir: str = field(
-        default_factory=lambda: os.getenv("SESSION_DIR", "/app/data/tiktok_session")
+        default_factory=lambda: os.getenv("SESSION_DIR", "./data/tiktok_session")
     )
 
     # --- Anti-bot delays (seconds) ---
@@ -68,9 +84,8 @@ class Config:
     )
 
     # --- Rate limiting ---
-    # 동일 유저에게 재발송 금지 기간 (초)
     same_user_cooldown: int = field(
-        default_factory=lambda: int(os.getenv("SAME_USER_COOLDOWN", "86400"))  # 24h
+        default_factory=lambda: int(os.getenv("SAME_USER_COOLDOWN", "86400"))
     )
 
 
